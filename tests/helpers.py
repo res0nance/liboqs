@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import json
+import shutil
 
 kats = {}
 kats["kem"] = None
@@ -199,10 +200,11 @@ def test_requires_build_options(*options):
 
 @functools.lru_cache()
 def test_requires_qemu(platform, mincpu):
-    no_qemu=False
-    try:
-        run_subprocess(["qemu-"+platform+"-static", "-cpu", mincpu, path_to_executable('test_kem')], ignore_returncode=True)
-    except:
-        no_qemu=True
+    no_qemu = shutil.which("qemu-"+platform+"-static") is None
+    if not no_qemu:
+        try:
+            run_subprocess(["qemu-"+platform+"-static", "-cpu", mincpu, path_to_executable('test_kem')], ignore_returncode=True)
+        except:
+            no_qemu=True
     return pytest.mark.skipif(no_qemu,
                 reason='Test requires qemu-{}-static -cpu {}'.format(platform, mincpu))
