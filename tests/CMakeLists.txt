@@ -36,9 +36,6 @@ if(NOT WIN32)
     execute_process(COMMAND ${PROJECT_SOURCE_DIR}/scripts/git_commit.sh OUTPUT_VARIABLE GIT_COMMIT)
     add_definitions(-DOQS_COMPILE_GIT_COMMIT="${GIT_COMMIT}")
 
-    add_executable(test_aes test_aes.c ${COMMON_OBJS})
-    target_link_libraries(test_aes PRIVATE ${INTERNAL_TEST_DEPS})
-
     add_executable(test_hash test_hash.c ${COMMON_OBJS})
     target_link_libraries(test_hash PRIVATE ${INTERNAL_TEST_DEPS})
 
@@ -48,17 +45,21 @@ if(NOT WIN32)
     add_executable(speed_common speed_common.c ${COMMON_OBJS})
     target_link_libraries(speed_common PRIVATE ${INTERNAL_TEST_DEPS})
 
-    set(UNIX_TESTS test_aes test_hash test_sha3)
+    set(UNIX_TESTS test_hash test_sha3)
 
     set(PYTHON3_EXEC python3)
 else()
     if(OQS_USE_OPENSSL)
         include_directories(${OPENSSL_INCLUDE_DIR})
+        set(INTERNAL_TEST_DEPS ${OPENSSL_CRYPTO_LIBRARY})
     endif()
     set(PYTHON3_EXEC python)
 endif()
 
 set(API_TEST_DEPS oqs ${LIBM})
+
+add_executable(test_aes test_aes.c ${COMMON_OBJS})
+target_link_libraries(test_aes PRIVATE ${INTERNAL_TEST_DEPS})
 
 # KEM API tests
 add_executable(example_kem example_kem.c)
@@ -132,5 +133,5 @@ add_custom_target(
     run_tests
     COMMAND ${CMAKE_COMMAND} -E env OQS_BUILD_DIR=${CMAKE_BINARY_DIR} ${PYTHON3_EXEC} -m pytest --verbose --numprocesses=auto --ignore=scripts/copy_from_upstream/repos
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    DEPENDS oqs dump_alg_info example_kem kat_kem test_kem example_sig kat_sig test_sig test_sig_mem test_kem_mem ${UNIX_TESTS}
+    DEPENDS oqs dump_alg_info test_aes example_kem kat_kem test_kem example_sig kat_sig test_sig test_sig_mem test_kem_mem ${UNIX_TESTS}
     USES_TERMINAL)
